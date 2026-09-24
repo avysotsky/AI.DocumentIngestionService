@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-AI.DocumentIngestion.Worker-bea8a901-8c97-4134-9d00-731fedef3efd</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AI.DocumentIngestion.Application\AI.DocumentIngestion.Application.csproj" />
+    <ProjectReference Include="..\AI.DocumentIngestion.Infrastructure\AI.DocumentIngestion.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

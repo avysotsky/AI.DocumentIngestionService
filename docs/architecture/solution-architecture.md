@@ -1,0 +1,97 @@
+# Solution architecture
+
+## Boundary
+
+The service owns document ingestion and preparation. Semantic search and question answering are separate services.
+
+## Projects and dependency direction
+
+~~~text
+AI.DocumentIngestion.Api -----------┐
+                                    ├── Application ──> Domain
+AI.DocumentIngestion.Worker --------┘       ^
+            │                               │
+            └────────> Infrastructure ──────┘
+~~~
+
+- **Domain**: document lifecycle and invariants; no infrastructure dependencies.
+- **Application**: use cases and ports for persistence, object storage, messaging, text extraction, chunking, and embeddings.
+- **Infrastructure**: PostgreSQL/pgvector, MinIO, RabbitMQ, PDF extraction, and ONNX adapters.
+- **Api**: upload, query, delete, and reprocess HTTP endpoints.
+- **Worker**: idempotent asynchronous document-processing consumer.
+
+## Processing flow
+
+~~~text
+POST /documents
+  -> validate and hash file
+  -> put object in MinIO
+  -> insert document + outbox message in PostgreSQL
+  -> return 202 Accepted
+
+Outbox publisher -> RabbitMQ DocumentUploaded.v1
+  -> Worker
+  -> extract text
+  -> deterministic chunking
+  -> batched ONNX embeddings
+  -> replace document chunks transactionally
+  -> mark document Ready
+~~~
+
+## Reliability decisions
+
+1. Publish through a transactional outbox so metadata and the upload event cannot diverge.
+2. RabbitMQ delivery is at least once; the consumer uses DocumentId as its idempotency key.
+3. A processing attempt replaces chunks in one database transaction, preventing duplicates.
+4. Retry transient failures with bounded exponential backoff; route exhausted messages to a DLQ.
+5. Store SHA-256 for integrity and future duplicate detection, but do not silently deduplicate in MVP.
+6. Deletion is asynchronous: mark metadata deleted, publish cleanup work, then remove the object and chunks.
+
+## Initial PostgreSQL model
+
+### documents
+
+- id uuid primary key
+- file_name varchar(255)
+- content_type varchar(100)
+- size bigint
+- sha256_hash char(64)
+- storage_key varchar(512) unique
+- status varchar(32)
+- created_at timestamptz
+- processing_started_at timestamptz null
+- processed_at timestamptz null
+- processing_error text null
+- processing_attempt int
+- xmin optimistic concurrency token
+
+### document_chunks
+
+- id uuid primary key
+- document_id uuid foreign key
+- sequence int
+- text text
+- page_number int null
+- token_count int
+- embedding vector(<model dimension>)
+- unique (document_id, sequence)
+
+Embedding dimension is intentionally deferred until the ONNX model is selected; the model and schema must agree.
+
+### outbox_messages / inbox_messages
+
+Store message identity, type, payload, timestamps, attempt data, and processing result for reliable publication and idempotent consumption.
+
+## Event contract
+
+DocumentUploaded.v1:
+
+~~~json
+{
+  "messageId": "uuid",
+  "occurredAt": "2026-09-24T10:00:00Z",
+  "documentId": "uuid"
+}
+~~~
+
+Only stable identifiers cross the queue. The worker reloads current metadata from PostgreSQL.
