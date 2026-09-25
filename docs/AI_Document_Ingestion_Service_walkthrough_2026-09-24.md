@@ -25,7 +25,7 @@ GET /documents/{id}
 На момент проверки были запущены:
 
 - API: http://127.0.0.1:5080
-- PostgreSQL: 127.0.0.1:55432
+- PostgreSQL: 127.0.0.1:5540
 - база: document_ingestion
 - тестовые данные: 1 document и 1 outbox event
 

@@ -5,6 +5,7 @@ using AI.DocumentIngestion.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddDocumentIngestionExternalConfiguration(builder.Environment.ContentRootPath);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();

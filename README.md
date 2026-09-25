@@ -30,6 +30,14 @@ See [solution architecture](docs/architecture/solution-architecture.md).
 
 ## Local development
 
+Create the external runtime configuration from the example:
+
+~~~powershell
+Copy-Item config.example.json config.json
+~~~
+
+`config.json` contains the local PostgreSQL connection string and object-storage path. It is ignored by Git. To keep it elsewhere, set `DOCUMENT_INGESTION_CONFIG_PATH` to its full path.
+
 Start PostgreSQL:
 
 ~~~powershell

@@ -1,0 +1,8 @@
+{
+  "ConnectionStrings": {
+    "PostgreSql": "Host=127.0.0.1;Port=5540;Database=document_ingestion;Username=document_ingestion"
+  },
+  "ObjectStorage": {
+    "RootPath": "D:\\Projects\\AI.DocumentIngestionService\\.local\\objects"
+  }
+}
