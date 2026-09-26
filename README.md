@@ -8,11 +8,15 @@ Production-style asynchronous .NET service that converts PDF and TXT documents i
 - Document and chunk domain models with guarded lifecycle transitions
 - POST /documents with PDF/TXT validation, 25 MiB limit, SHA-256, object persistence, metadata persistence, and 202 Accepted
 - GET /documents/{id}
+- GET /documents with bounded pagination
+- POST /documents/{id}/reprocess for Ready/Failed documents
+- separate liveness and PostgreSQL readiness checks
 - PostgreSQL persistence with EF Core
 - Transactional DocumentUploadedV1 outbox record
 - First EF migration with pgvector extension, tables, constraints, foreign keys, and indexes
 - Atomic local-filesystem object-storage adapter for the current development stage
 - Problem Details errors and health endpoint
+- GitHub Actions build and test workflow
 - Unit tests for domain transitions and upload orchestration
 
 The next storage increment replaces the local object adapter with MinIO while preserving the application interface.
@@ -27,6 +31,15 @@ The next storage increment replaces the local object adapter with MinIO while pr
 - OpenTelemetry, Testcontainers, Docker Compose, and GitHub Actions
 
 See [solution architecture](docs/architecture/solution-architecture.md).
+
+## API
+
+- POST /documents
+- GET /documents/{id}
+- GET /documents?page=1&pageSize=20
+- POST /documents/{id}/reprocess
+- GET /health/live
+- GET /health/ready
 
 ## Local development
 

@@ -25,6 +25,31 @@ internal sealed class DocumentRepository : IDocumentRepository
             .SingleOrDefaultAsync(document => document.Id == id, cancellationToken);
     }
 
+    public Task<Document?> GetForUpdateAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return _dbContext.Documents
+            .SingleOrDefaultAsync(document => document.Id == id, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Document>> ListAsync(
+        int skip,
+        int take,
+        CancellationToken cancellationToken)
+    {
+        return await _dbContext.Documents
+            .AsNoTracking()
+            .OrderByDescending(document => document.CreatedAt)
+            .ThenBy(document => document.Id)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<int> CountAsync(CancellationToken cancellationToken)
+    {
+        return _dbContext.Documents.CountAsync(cancellationToken);
+    }
+
     public Task SaveChangesAsync(CancellationToken cancellationToken)
     {
         return _dbContext.SaveChangesAsync(cancellationToken);

@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using AI.DocumentIngestion.Api;
 using AI.DocumentIngestion.Application.Documents;
 using AI.DocumentIngestion.Infrastructure;
+using AI.DocumentIngestion.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,17 +10,24 @@ builder.Configuration.AddDocumentIngestionExternalConfiguration(builder.Environm
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
-builder.Services.AddHealthChecks();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<DocumentIngestionDbContext>("postgresql");
 builder.Services.AddScoped<UploadDocumentHandler>();
 builder.Services.AddScoped<GetDocumentHandler>();
+builder.Services.AddScoped<ListDocumentsHandler>();
+builder.Services.AddScoped<ReprocessDocumentHandler>();
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/live", new()
+{
+    Predicate = _ => false,
+});
+app.MapHealthChecks("/health/ready");
 app.MapPost(
         "/documents",
         async (
@@ -50,6 +58,35 @@ app.MapGet(
     {
         var document = await handler.HandleAsync(id, cancellationToken);
         return document is null ? Results.NotFound() : Results.Ok(document);
+    });
+
+app.MapGet(
+    "/documents",
+    async (
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
+        ListDocumentsHandler handler,
+        CancellationToken cancellationToken) =>
+    {
+        var result = await handler.HandleAsync(
+            new ListDocumentsQuery(
+                page == 0 ? 1 : page,
+                pageSize == 0 ? 20 : pageSize),
+            cancellationToken);
+        return Results.Ok(result);
+    });
+
+app.MapPost(
+    "/documents/{id:guid}/reprocess",
+    async (
+        Guid id,
+        ReprocessDocumentHandler handler,
+        CancellationToken cancellationToken) =>
+    {
+        var document = await handler.HandleAsync(id, cancellationToken);
+        return document is null
+            ? Results.NotFound()
+            : Results.Accepted($"/documents/{document.Id}", document);
     });
 
 app.Run();

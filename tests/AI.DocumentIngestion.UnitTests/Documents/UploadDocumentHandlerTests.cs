@@ -92,6 +92,27 @@ public sealed class UploadDocumentHandlerTests
             return Task.FromResult(Document?.Id == id ? Document : null);
         }
 
+        public Task<Document?> GetForUpdateAsync(Guid id, CancellationToken cancellationToken)
+        {
+            return GetAsync(id, cancellationToken);
+        }
+
+        public Task<IReadOnlyList<Document>> ListAsync(
+            int skip,
+            int take,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            IReadOnlyList<Document> result = Document is null ? [] : [Document];
+            return Task.FromResult(result);
+        }
+
+        public Task<int> CountAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(Document is null ? 0 : 1);
+        }
+
         public Task SaveChangesAsync(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();

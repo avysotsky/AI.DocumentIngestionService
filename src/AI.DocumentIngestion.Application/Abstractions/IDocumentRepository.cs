@@ -8,5 +8,14 @@ public interface IDocumentRepository
 
     Task<Document?> GetAsync(Guid id, CancellationToken cancellationToken);
 
+    Task<Document?> GetForUpdateAsync(Guid id, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<Document>> ListAsync(
+        int skip,
+        int take,
+        CancellationToken cancellationToken);
+
+    Task<int> CountAsync(CancellationToken cancellationToken);
+
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }
