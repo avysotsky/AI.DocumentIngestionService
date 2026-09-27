@@ -30,4 +30,16 @@ public sealed class OutboxMessage
     {
         return new OutboxMessage(id, occurredAt, type, payload);
     }
+
+    public void MarkPublished(DateTimeOffset processedAt)
+    {
+        ProcessedAt = processedAt;
+        LastError = null;
+    }
+
+    public void RecordFailure(string error)
+    {
+        AttemptCount++;
+        LastError = string.IsNullOrWhiteSpace(error) ? "RabbitMQ publish failed." : error;
+    }
 }

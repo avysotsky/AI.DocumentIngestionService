@@ -12,7 +12,8 @@ public sealed class DocumentChunk
         int sequence,
         string text,
         int? pageNumber,
-        int tokenCount)
+        int tokenCount,
+        float[] embedding)
     {
         Id = id;
         DocumentId = documentId;
@@ -20,6 +21,7 @@ public sealed class DocumentChunk
         Text = text;
         PageNumber = pageNumber;
         TokenCount = tokenCount;
+        Embedding = embedding;
     }
 
     public Guid Id { get; private set; }
@@ -28,6 +30,7 @@ public sealed class DocumentChunk
     public string Text { get; private set; } = string.Empty;
     public int? PageNumber { get; private set; }
     public int TokenCount { get; private set; }
+    public float[] Embedding { get; private set; } = [];
 
     public static DocumentChunk Create(
         Guid id,
@@ -35,7 +38,8 @@ public sealed class DocumentChunk
         int sequence,
         string text,
         int? pageNumber,
-        int tokenCount)
+        int tokenCount,
+        float[] embedding)
     {
         if (id == Guid.Empty)
         {
@@ -60,7 +64,13 @@ public sealed class DocumentChunk
         }
 
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(tokenCount);
+        ArgumentNullException.ThrowIfNull(embedding);
+        if (embedding.Length != 768)
+        {
+            throw new ArgumentException("Embedding must contain exactly 768 values.", nameof(embedding));
+        }
 
-        return new DocumentChunk(id, documentId, sequence, text.Trim(), pageNumber, tokenCount);
+        return new DocumentChunk(
+            id, documentId, sequence, text.Trim(), pageNumber, tokenCount, embedding);
     }
 }

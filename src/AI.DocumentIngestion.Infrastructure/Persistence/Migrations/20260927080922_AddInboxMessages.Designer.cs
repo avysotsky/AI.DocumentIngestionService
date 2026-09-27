@@ -3,18 +3,20 @@ using System;
 using AI.DocumentIngestion.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using Pgvector;
 
 #nullable disable
 
 namespace AI.DocumentIngestion.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(DocumentIngestionDbContext))]
-    partial class DocumentIngestionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260927080922_AddInboxMessages")]
+    partial class AddInboxMessages
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -111,11 +113,6 @@ namespace AI.DocumentIngestion.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("DocumentId")
                         .HasColumnType("uuid")
                         .HasColumnName("document_id");
-
-                    b.Property<Vector>("Embedding")
-                        .IsRequired()
-                        .HasColumnType("vector(768)")
-                        .HasColumnName("embedding");
 
                     b.Property<int?>("PageNumber")
                         .HasColumnType("integer")

@@ -1,4 +1,5 @@
 using AI.DocumentIngestion.Domain.Documents;
+using AI.DocumentIngestion.Infrastructure.Persistence.Inbox;
 using AI.DocumentIngestion.Infrastructure.Persistence.Outbox;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +15,7 @@ public sealed class DocumentIngestionDbContext : DbContext
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<DocumentChunk> DocumentChunks => Set<DocumentChunk>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using AI.DocumentIngestion.Api;
 using AI.DocumentIngestion.Application.Documents;
 using AI.DocumentIngestion.Infrastructure;
+using AI.DocumentIngestion.Infrastructure.Messaging;
 using AI.DocumentIngestion.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,7 +13,8 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHealthChecks()
-    .AddDbContextCheck<DocumentIngestionDbContext>("postgresql");
+    .AddDbContextCheck<DocumentIngestionDbContext>("postgresql")
+    .AddCheck<RabbitMqHealthCheck>("rabbitmq");
 builder.Services.AddScoped<UploadDocumentHandler>();
 builder.Services.AddScoped<GetDocumentHandler>();
 builder.Services.AddScoped<ListDocumentsHandler>();
@@ -21,6 +23,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 var app = builder.Build();
+
+await app.Services.MigrateDocumentIngestionDatabaseAsync();
 
 app.UseExceptionHandler();
 app.MapHealthChecks("/health/live", new()

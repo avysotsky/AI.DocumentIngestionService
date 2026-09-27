@@ -1,6 +1,8 @@
 using AI.DocumentIngestion.Domain.Documents;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Pgvector;
 
 namespace AI.DocumentIngestion.Infrastructure.Persistence.Documents;
 
@@ -22,6 +24,19 @@ internal sealed class DocumentChunkConfiguration : IEntityTypeConfiguration<Docu
         builder.Property(chunk => chunk.Text).HasColumnName("text").IsRequired();
         builder.Property(chunk => chunk.PageNumber).HasColumnName("page_number");
         builder.Property(chunk => chunk.TokenCount).HasColumnName("token_count");
+        var embeddingProperty = builder.Property(chunk => chunk.Embedding)
+            .HasColumnName("embedding")
+            .HasColumnType("vector(768)")
+            .HasConversion(
+                value => new Vector(value),
+                value => value.ToArray())
+            .IsRequired();
+        embeddingProperty.Metadata.SetValueComparer(
+            new ValueComparer<float[]>(
+                (left, right) => ReferenceEquals(left, right) ||
+                    (left != null && right != null && left.SequenceEqual(right)),
+                value => value == null ? 0 : value.Aggregate(0, HashCode.Combine),
+                value => value == null ? Array.Empty<float>() : value.ToArray()));
 
         builder.HasIndex(chunk => new { chunk.DocumentId, chunk.Sequence }).IsUnique();
         builder.HasOne<Document>()

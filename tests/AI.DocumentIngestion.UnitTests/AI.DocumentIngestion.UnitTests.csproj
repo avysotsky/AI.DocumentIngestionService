@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\AI.DocumentIngestion.Application\AI.DocumentIngestion.Application.csproj" />
     <ProjectReference Include="..\..\src\AI.DocumentIngestion.Domain\AI.DocumentIngestion.Domain.csproj" />
+    <ProjectReference Include="..\..\src\AI.DocumentIngestion.Infrastructure\AI.DocumentIngestion.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

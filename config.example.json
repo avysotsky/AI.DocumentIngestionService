@@ -1,8 +1,27 @@
 {
   "ConnectionStrings": {
-    "PostgreSql": "Host=127.0.0.1;Port=5540;Database=document_ingestion;Username=document_ingestion"
+    "PostgreSql": "Host=192.168.0.102;Port=55432;Database=replace_me;Username=replace_me;Password=replace_me"
+  },
+  "RabbitMq": {
+    "HostName": "192.168.0.102",
+    "Port": 5672,
+    "VirtualHost": "/",
+    "UserName": "replace_me",
+    "Password": "replace_me",
+    "ExchangeName": "document-ingestion",
+    "QueueName": "document-ingestion.worker",
+    "RoutingKey": "document.uploaded.v1"
   },
   "ObjectStorage": {
     "RootPath": "D:\\Projects\\AI.DocumentIngestionService\\.local\\objects"
+  },
+  "PdfExtraction": {
+    "MaximumPages": 1000,
+    "MaximumExtractedCharacters": 10000000
+  },
+  "Embeddings": {
+    "ModelPath": "D:\\AI.Models\\multilingual-e5-base",
+    "BatchSize": 8,
+    "MaxTokenLength": 512
   }
 }

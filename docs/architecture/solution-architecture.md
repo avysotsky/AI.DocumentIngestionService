@@ -16,8 +16,8 @@ AI.DocumentIngestion.Worker --------┘       ^
 
 - **Domain**: document lifecycle and invariants; no infrastructure dependencies.
 - **Application**: use cases and ports for persistence, object storage, messaging, text extraction, chunking, and embeddings.
-- **Infrastructure**: PostgreSQL/pgvector, MinIO, RabbitMQ, PDF extraction, and ONNX adapters.
-- **Api**: upload, query, delete, and reprocess HTTP endpoints.
+- **Infrastructure**: PostgreSQL/pgvector, local object storage, RabbitMQ, PdfPig extraction, and ONNX adapters.
+- **Api**: upload, query, and reprocess HTTP endpoints.
 - **Worker**: idempotent asynchronous document-processing consumer.
 
 ## Processing flow
@@ -25,14 +25,14 @@ AI.DocumentIngestion.Worker --------┘       ^
 ~~~text
 POST /documents
   -> validate and hash file
-  -> put object in MinIO
+  -> put object in the configured object storage
   -> insert document + outbox message in PostgreSQL
   -> return 202 Accepted
 
 Outbox publisher -> RabbitMQ DocumentUploaded.v1
   -> Worker
-  -> extract text
-  -> deterministic chunking
+  -> extract TXT or text-based PDF pages
+  -> deterministic normalization and page-aware, model-token-budgeted chunking
   -> batched ONNX embeddings
   -> replace document chunks transactionally
   -> mark document Ready
@@ -41,11 +41,10 @@ Outbox publisher -> RabbitMQ DocumentUploaded.v1
 ## Reliability decisions
 
 1. Publish through a transactional outbox so metadata and the upload event cannot diverge.
-2. RabbitMQ delivery is at least once; the consumer uses DocumentId as its idempotency key.
-3. A processing attempt replaces chunks in one database transaction, preventing duplicates.
-4. Retry transient failures with bounded exponential backoff; route exhausted messages to a DLQ.
+2. RabbitMQ delivery is at least once; the consumer records each event MessageId in the inbox and processes only documents still in `Uploaded` state.
+3. Inbox insertion, lifecycle transitions, old-chunk deletion, new-chunk insertion, and `Ready` are committed in one database transaction, preventing partial replacement and duplicates.
+4. Expected document failures are persisted as `Failed`; unexpected/transient failures are negatively acknowledged and requeued by RabbitMQ.
 5. Store SHA-256 for integrity and future duplicate detection, but do not silently deduplicate in MVP.
-6. Deletion is asynchronous: mark metadata deleted, publish cleanup work, then remove the object and chunks.
 
 ## Initial PostgreSQL model
 
@@ -73,10 +72,10 @@ Outbox publisher -> RabbitMQ DocumentUploaded.v1
 - text text
 - page_number int null
 - token_count int
-- embedding vector(<model dimension>)
+- embedding vector(768)
 - unique (document_id, sequence)
 
-Embedding dimension is intentionally deferred until the ONNX model is selected; the model and schema must agree.
+The schema and startup validation both require 768 dimensions for `intfloat/multilingual-e5-base`.
 
 ### outbox_messages / inbox_messages
 
