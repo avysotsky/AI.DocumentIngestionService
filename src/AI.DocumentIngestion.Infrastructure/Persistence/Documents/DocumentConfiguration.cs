@@ -31,6 +31,18 @@ internal sealed class DocumentConfiguration : IEntityTypeConfiguration<Document>
             .HasColumnName("storage_key")
             .HasMaxLength(512)
             .IsRequired();
+        builder.Property(document => document.TenantId)
+            .HasColumnName("tenant_id")
+            .HasMaxLength(128)
+            .IsRequired();
+        builder.Property(document => document.OwnerId)
+            .HasColumnName("owner_id")
+            .HasMaxLength(128)
+            .IsRequired();
+        builder.Property(document => document.MetadataJson)
+            .HasColumnName("metadata")
+            .HasColumnType("jsonb")
+            .IsRequired();
         builder.Property(document => document.Status)
             .HasColumnName("status")
             .HasConversion<string>()
@@ -45,5 +57,6 @@ internal sealed class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.HasIndex(document => document.StorageKey).IsUnique();
         builder.HasIndex(document => document.Sha256Hash);
         builder.HasIndex(document => new { document.Status, document.CreatedAt });
+        builder.HasIndex(document => new { document.TenantId, document.OwnerId, document.Status, document.CreatedAt });
     }
 }

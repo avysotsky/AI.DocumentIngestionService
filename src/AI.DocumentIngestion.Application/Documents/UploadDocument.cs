@@ -8,7 +8,10 @@ public sealed record UploadDocumentCommand(
     string FileName,
     string ContentType,
     long Size,
-    Stream Content);
+    Stream Content,
+    string TenantId,
+    string OwnerId,
+    string MetadataJson = "{}");
 
 public sealed class UploadDocumentHandler
 {
@@ -59,6 +62,9 @@ public sealed class UploadDocumentHandler
             command.Size,
             hash,
             storageKey,
+            command.TenantId,
+            command.OwnerId,
+            command.MetadataJson,
             now);
 
         await _storage.PutAsync(
@@ -109,6 +115,29 @@ public sealed class UploadDocumentHandler
         if (!command.Content.CanRead || !command.Content.CanSeek)
         {
             throw new ArgumentException("The document stream must be readable and seekable.", nameof(command));
+        }
+
+        if (string.IsNullOrWhiteSpace(command.TenantId) || string.IsNullOrWhiteSpace(command.OwnerId))
+        {
+            throw new ArgumentException("Tenant and owner scope are required.", nameof(command));
+        }
+
+        if (command.MetadataJson.Length > 32_768)
+        {
+            throw new ArgumentException("Metadata cannot exceed 32768 characters.", nameof(command));
+        }
+
+        try
+        {
+            using var metadata = System.Text.Json.JsonDocument.Parse(command.MetadataJson);
+            if (metadata.RootElement.ValueKind != System.Text.Json.JsonValueKind.Object)
+            {
+                throw new ArgumentException("Metadata must be a JSON object.", nameof(command));
+            }
+        }
+        catch (System.Text.Json.JsonException exception)
+        {
+            throw new ArgumentException("Metadata must be valid JSON.", nameof(command), exception);
         }
     }
 

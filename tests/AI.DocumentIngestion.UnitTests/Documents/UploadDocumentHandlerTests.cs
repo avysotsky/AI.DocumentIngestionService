@@ -24,7 +24,7 @@ public sealed class UploadDocumentHandlerTests
 
         await using var content = new MemoryStream(bytes);
         var result = await handler.HandleAsync(
-            new UploadDocumentCommand("contract.txt", "text/plain", bytes.Length, content),
+            new UploadDocumentCommand("contract.txt", "text/plain", bytes.Length, content, "tenant-a", "owner-a"),
             CancellationToken.None);
 
         var expectedHash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
@@ -55,7 +55,7 @@ public sealed class UploadDocumentHandlerTests
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             handler.HandleAsync(
-                new UploadDocumentCommand("image.png", "image/png", content.Length, content),
+                new UploadDocumentCommand("image.png", "image/png", content.Length, content, "tenant-a", "owner-a"),
                 CancellationToken.None));
 
         Assert.Null(repository.Document);

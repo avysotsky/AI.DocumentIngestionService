@@ -57,6 +57,9 @@ Outbox publisher -> RabbitMQ DocumentUploaded.v1
 - sha256_hash char(64)
 - storage_key varchar(512) unique
 - status varchar(32)
+- tenant_id varchar(128)
+- owner_id varchar(128)
+- metadata jsonb
 - created_at timestamptz
 - processing_started_at timestamptz null
 - processed_at timestamptz null
@@ -74,8 +77,10 @@ Outbox publisher -> RabbitMQ DocumentUploaded.v1
 - token_count int
 - embedding vector(768)
 - unique (document_id, sequence)
+- HNSW index on `embedding vector_cosine_ops`
+- GIN expression index on `to_tsvector('simple', text)`
 
-The schema and startup validation both require 768 dimensions for `intfloat/multilingual-e5-base`.
+A composite `(tenant_id, owner_id, status, created_at)` document index supports identical isolation predicates in vector and FTS candidate branches. The schema and startup validation both require 768 dimensions for `intfloat/multilingual-e5-base`.
 
 ### outbox_messages / inbox_messages
 

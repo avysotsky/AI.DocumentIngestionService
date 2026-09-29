@@ -18,7 +18,7 @@ Production-style asynchronous .NET service that converts PDF and TXT documents i
 - page-aware PDF chunks with explicit failures for encrypted, empty, image-only, invalid, and over-limit PDFs
 - XLM-R tokenization, `passage: ` prefix, attention-mask mean pooling, and L2-normalized 768-dimensional embeddings
 - atomic replacement of document chunks and pgvector `vector(768)` persistence before Ready
-- EF migrations with pgvector extension, tables, constraints, foreign keys, and indexes
+- EF migrations with pgvector extension, tables, constraints, foreign keys, tenant/owner/metadata columns, cosine HNSW, and FTS GIN indexes
 - Atomic local-filesystem object-storage adapter for the current development stage
 - Problem Details errors and health endpoint
 - GitHub Actions build and test workflow
@@ -86,7 +86,7 @@ Worker configuration:
 
 Startup fails immediately when `model.onnx` or `tokenizer.json` is missing or when the model output is not 768-dimensional.
 
-Restore tools and apply the database migration:
+Restore tools and apply the database migration (the search-index migration uses `CREATE INDEX CONCURRENTLY`; run one migrator instance):
 
 ~~~powershell
 dotnet tool restore
@@ -110,12 +110,13 @@ dotnet run --project src/AI.DocumentIngestion.Api
 dotnet run --project src/AI.DocumentIngestion.Worker
 ~~~
 
-Upload a document:
+Upload a document with trusted ownership scope and optional JSON metadata:
 
 ~~~powershell
-curl.exe -F "file=@contract.txt;type=text/plain" http://localhost:5000/documents
-curl.exe -F "file=@contract.pdf;type=application/pdf" http://localhost:5000/documents
+curl.exe -H "X-Tenant-Id: tenant-a" -H "X-Owner-Id: owner-a" -F "file=@contract.txt;type=text/plain" -F "metadata={\"department\":\"legal\"}" http://localhost:5000/documents
 ~~~
+
+Production ingress must strip caller-supplied scope headers and inject authenticated tenant/owner claims. The service currently has no identity-provider integration. The ownership migration marks pre-existing rows as reserved `__legacy_unassigned__`; Semantic Search rejects that scope, so legacy data must be explicitly assigned before it becomes searchable.
 
 ### PDF behavior and limits
 

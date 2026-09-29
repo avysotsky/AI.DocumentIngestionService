@@ -36,6 +36,9 @@ app.MapPost(
         "/documents",
         async (
             [FromForm] IFormFile file,
+            [FromForm] string? metadata,
+            [FromHeader(Name = "X-Tenant-Id")] string tenantId,
+            [FromHeader(Name = "X-Owner-Id")] string ownerId,
             UploadDocumentHandler handler,
             CancellationToken cancellationToken) =>
         {
@@ -45,7 +48,10 @@ app.MapPost(
                     file.FileName,
                     file.ContentType,
                     file.Length,
-                    content),
+                    content,
+                    tenantId,
+                    ownerId,
+                    string.IsNullOrWhiteSpace(metadata) ? "{}" : metadata),
                 cancellationToken);
 
             return Results.Accepted($"/documents/{document.Id}", document);

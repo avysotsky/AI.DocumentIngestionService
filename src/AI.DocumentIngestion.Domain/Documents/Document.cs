@@ -13,6 +13,9 @@ public sealed class Document
         long size,
         string sha256Hash,
         string storageKey,
+        string tenantId,
+        string ownerId,
+        string metadataJson,
         DateTimeOffset createdAt)
     {
         Id = id;
@@ -20,6 +23,9 @@ public sealed class Document
         ContentType = RequireText(contentType, nameof(contentType));
         Sha256Hash = RequireText(sha256Hash, nameof(sha256Hash));
         StorageKey = RequireText(storageKey, nameof(storageKey));
+        TenantId = RequireScope(tenantId, nameof(tenantId));
+        OwnerId = RequireScope(ownerId, nameof(ownerId));
+        MetadataJson = RequireText(metadataJson, nameof(metadataJson));
 
         if (size <= 0)
         {
@@ -37,6 +43,9 @@ public sealed class Document
     public long Size { get; private set; }
     public string Sha256Hash { get; private set; } = string.Empty;
     public string StorageKey { get; private set; } = string.Empty;
+    public string TenantId { get; private set; } = string.Empty;
+    public string OwnerId { get; private set; } = string.Empty;
+    public string MetadataJson { get; private set; } = "{}";
     public DocumentStatus Status { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset? ProcessingStartedAt { get; private set; }
@@ -51,6 +60,9 @@ public sealed class Document
         long size,
         string sha256Hash,
         string storageKey,
+        string tenantId,
+        string ownerId,
+        string metadataJson,
         DateTimeOffset createdAt)
     {
         if (id == Guid.Empty)
@@ -58,7 +70,8 @@ public sealed class Document
             throw new ArgumentException("Document id cannot be empty.", nameof(id));
         }
 
-        return new Document(id, fileName, contentType, size, sha256Hash, storageKey, createdAt);
+        return new Document(id, fileName, contentType, size, sha256Hash, storageKey,
+            tenantId, ownerId, metadataJson, createdAt);
     }
 
     public void StartExtraction(DateTimeOffset startedAt)
@@ -126,5 +139,13 @@ public sealed class Document
         return string.IsNullOrWhiteSpace(value)
             ? throw new ArgumentException("Value cannot be empty.", parameterName)
             : value.Trim();
+    }
+
+    private static string RequireScope(string value, string parameterName)
+    {
+        var normalized = RequireText(value, parameterName);
+        return normalized.Length <= 128
+            ? normalized
+            : throw new ArgumentException("Scope identifier cannot exceed 128 characters.", parameterName);
     }
 }

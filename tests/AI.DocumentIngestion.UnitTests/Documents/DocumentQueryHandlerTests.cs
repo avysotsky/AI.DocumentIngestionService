@@ -59,6 +59,9 @@ public sealed class DocumentQueryHandlerTests
             10,
             new string('a', 64),
             $"documents/{Guid.NewGuid():N}.txt",
+            "tenant-a",
+            "owner-a",
+            "{}",
             createdAt);
     }
 

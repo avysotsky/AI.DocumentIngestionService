@@ -57,6 +57,9 @@ public sealed class DocumentTests
             1_024,
             new string('a', 64),
             "documents/contract.pdf",
+            "tenant-a",
+            "owner-a",
+            "{}",
             DateTimeOffset.UtcNow);
     }
 }

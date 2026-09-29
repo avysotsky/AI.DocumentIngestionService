@@ -47,6 +47,17 @@ namespace AI.DocumentIngestion.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("file_name");
 
+                    b.Property<string>("MetadataJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("metadata");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("owner_id");
+
                     b.Property<DateTimeOffset?>("ProcessedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("processed_at");
@@ -86,6 +97,12 @@ namespace AI.DocumentIngestion.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(512)")
                         .HasColumnName("storage_key");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("tenant_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Sha256Hash");
@@ -94,6 +111,8 @@ namespace AI.DocumentIngestion.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.HasIndex("Status", "CreatedAt");
+
+                    b.HasIndex("TenantId", "OwnerId", "Status", "CreatedAt");
 
                     b.ToTable("documents", null, t =>
                         {
